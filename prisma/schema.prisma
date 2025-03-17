@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  username        String            @unique
+  email           String            @unique
+  passwordHash    String
+  firstName       String?
+  lastName        String?
+  avatarUrl       String?
+  role            String            @default("student")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  progress        UserProgress[]
+  achievements    UserAchievement[]
+}
+
+model Module {
+  id          Int           @id @default(autoincrement())
+  title       String
+  description String?
+  orderIndex  Int
+  thumbnailUrl String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  lessons     ModuleLesson[]
+}
+
+model Lesson {
+  id               Int           @id @default(autoincrement())
+  title            String
+  description      String?
+  difficultyLevel  String
+  orderIndex       Int
+  contentMarkdown  String?
+  thumbnailUrl     String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  moduleLessons    ModuleLesson[]
+  userProgress     UserProgress[]
+}
+
+model ModuleLesson {
+  id         Int     @id @default(autoincrement())
+  moduleId   Int
+  lessonId   Int
+  orderIndex Int
+  module     Module  @relation(fields: [moduleId], references: [id])
+  lesson     Lesson  @relation(fields: [lessonId], references: [id])
+
+  @@unique([moduleId, lessonId])
+}
+
+model UserProgress {
+  id                  Int       @id @default(autoincrement())
+  userId              Int
+  lessonId            Int
+  status              String    @default("not_started")
+  completionPercentage Int      @default(0)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  user                User      @relation(fields: [userId], references: [id])
+  lesson              Lesson    @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model Achievement {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String?
+  iconUrl     String?
+  points      Int              @default(0)
+  createdAt   DateTime         @default(now())
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  achievementId Int
+  earnedAt      DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+}
